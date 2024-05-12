@@ -74,8 +74,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--random-seed", help="random seed for repeatability", default=3
     )
-    parser.add_argument("--iter", help="iteration number", default=11)
-    parser.add_argument("--seed", help="training seed", default=13)
+    parser.add_argument("--iter", help="iteration number", default=1)
+    parser.add_argument("--seed", help="training seed", default=601)
     args = parser.parse_args()
 
     args_tmp = parser.parse_args()
