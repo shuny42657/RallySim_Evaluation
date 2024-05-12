@@ -1,13 +1,13 @@
 import numpy as np
 import scipy.signal
-from gym.spaces import Box, Discrete
 
 import torch
 import torch.nn as nn
 from torch.distributions.normal import Normal
 from torch.distributions.categorical import Categorical
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def combined_shape(length, shape=None):
     if shape is None:
@@ -46,7 +46,6 @@ def discount_cumsum(x, discount):
 
 
 class Actor(nn.Module):
-
     def _distribution(self, obs):
         raise NotImplementedError
 
@@ -65,7 +64,6 @@ class Actor(nn.Module):
 
 
 class MLPCategoricalActor(Actor):
-
     def __init__(self, obs_dim, act_dim, hidden_sizes, activation):
         super().__init__()
         self.logits_net = mlp([obs_dim] + list(hidden_sizes) + [act_dim], activation)
@@ -80,7 +78,6 @@ class MLPCategoricalActor(Actor):
 
 
 class MLPGaussianActor(Actor):
-
     def __init__(self, obs_dim, act_dim, hidden_sizes, activation):
         super().__init__()
         log_std = -0.5 * np.ones(act_dim, dtype=np.float32)
@@ -93,23 +90,26 @@ class MLPGaussianActor(Actor):
         return Normal(mu, std), mu
 
     def _log_prob_from_distribution(self, pi, act):
-        return pi.log_prob(act).sum(axis=-1)  # Last axis sum needed for Torch Normal distribution
+        return pi.log_prob(act).sum(
+            axis=-1
+        )  # Last axis sum needed for Torch Normal distribution
 
 
 class MLPCritic(nn.Module):
-
     def __init__(self, obs_dim, hidden_sizes, activation):
         super().__init__()
         self.v_net = mlp([obs_dim] + list(hidden_sizes) + [1], activation)
 
     def forward(self, obs):
-        return torch.squeeze(self.v_net(obs), -1)  # Critical to ensure v has right shape.
+        return torch.squeeze(
+            self.v_net(obs), -1
+        )  # Critical to ensure v has right shape.
 
 
 class MLPActorCritic(nn.Module):
-
-    def __init__(self, state_dim, action_dim,
-                 hidden_sizes=(64, 64), activation=nn.Tanh):
+    def __init__(
+        self, state_dim, action_dim, hidden_sizes=(64, 64), activation=nn.Tanh
+    ):
         super().__init__()
 
         # policy builder depends on action space
@@ -117,7 +117,9 @@ class MLPActorCritic(nn.Module):
             self.pi = MLPGaussianActor(obs_dim, action_space.shape[0], hidden_sizes, activation)
         elif isinstance(action_space, Discrete):
             self.pi = MLPCategoricalActor(obs_dim, action_space.n, hidden_sizes, activation)"""
-        self.pi = MLPGaussianActor(state_dim,action_dim,hidden_sizes,activation) ##for the badminton task only Box comes in
+        self.pi = MLPGaussianActor(
+            state_dim, action_dim, hidden_sizes, activation
+        )  ##for the badminton task only Box comes in
 
         # build value function
         self.v = MLPCritic(state_dim, hidden_sizes, activation)
@@ -128,10 +130,16 @@ class MLPActorCritic(nn.Module):
             a = pi.sample()
             logp_a = self.pi._log_prob_from_distribution(pi, a)
             v = self.v(obs)
-        return a.cpu().numpy(), v.cpu().numpy(), logp_a.cpu().numpy(), a_greedy.cpu().numpy()
+        return (
+            a.cpu().numpy(),
+            v.cpu().numpy(),
+            logp_a.cpu().numpy(),
+            a_greedy.cpu().numpy(),
+        )
 
     def act(self, obs):
         return self.step(obs)[0]
+
 
 class PPOBuffer:
     """
@@ -206,25 +214,32 @@ class PPOBuffer:
         adv_std = np.std(self.adv_buf)
 
         self.adv_buf = (self.adv_buf - adv_mean) / adv_std
-        data = dict(obs=self.obs_buf, act=self.act_buf, ret=self.ret_buf,
-                    adv=self.adv_buf, logp=self.logp_buf)
+        data = dict(
+            obs=self.obs_buf,
+            act=self.act_buf,
+            ret=self.ret_buf,
+            adv=self.adv_buf,
+            logp=self.logp_buf,
+        )
         return {k: torch.as_tensor(v, dtype=torch.float32) for k, v in data.items()}
 
+
 class PPO(object):
-    def __init__(self,
-            state_dim,
-            action_dim,
-            actor_critic=MLPActorCritic,
-            ac_kwargs=dict(),
-            steps_per_epoch=4000,
-            gamma=0.99,
-            clip_ratio=0.2,
-            pi_lr=3e-4,
-            vf_lr=1e-3,
-            train_pi_iters=80,
-            train_v_iters=80,
-            lam=0.97,
-            target_kl=0.01
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        actor_critic=MLPActorCritic,
+        ac_kwargs=dict(),
+        steps_per_epoch=4000,
+        gamma=0.99,
+        clip_ratio=0.2,
+        pi_lr=3e-4,
+        vf_lr=1e-3,
+        train_pi_iters=80,
+        train_v_iters=80,
+        lam=0.97,
+        target_kl=0.01,
     ):
         """
         Proximal Policy Optimization (by clipping),
@@ -367,7 +382,12 @@ class PPO(object):
 
     # Set up function for computing PPO policy loss
     def compute_loss_pi(self, data):
-        obs, act, adv, logp_old = data['obs'].to(device), data['act'].to(device), data['adv'].to(device), data['logp'].to(device)
+        obs, act, adv, logp_old = (
+            data["obs"].to(device),
+            data["act"].to(device),
+            data["adv"].to(device),
+            data["logp"].to(device),
+        )
 
         # Policy loss
         pi, logp = self.ac.pi(obs, act)
@@ -386,7 +406,7 @@ class PPO(object):
 
     # Set up function for computing value loss
     def compute_loss_v(self, data):
-        obs, ret = data['obs'].to(device), data['ret'].to(device)
+        obs, ret = data["obs"].to(device), data["ret"].to(device)
         return ((self.ac.v(obs) - ret) ** 2).mean()
 
     def update(self, buf):
@@ -401,10 +421,10 @@ class PPO(object):
             self.pi_optimizer.zero_grad()
             loss_pi, pi_info = self.compute_loss_pi(data)
             # kl = mpi_avg(pi_info['kl'])
-            kl = pi_info['kl']
+            kl = pi_info["kl"]
             if kl > 1.5 * self.target_kl:
                 # logger.log('Early stopping at step %d due to reaching max kl.' % i)
-                print('Early stopping at step %d due to reaching max kl.')
+                print("Early stopping at step %d due to reaching max kl.")
                 break
             loss_pi.backward()
             # mpi_avg_grads(ac.pi)  # average grads across MPI processes
@@ -420,23 +440,42 @@ class PPO(object):
             # mpi_avg_grads(ac.v)  # average grads across MPI processes
             self.vf_optimizer.step()
 
-    def save_model(self, iter, seed, env_name, foldername='./models/ppo/high_level'):
+    def save_model(self, iter, seed, env_name, foldername="./models/ppo/high_level"):
         try:
             import pathlib
+
             pathlib.Path(foldername).mkdir(parents=True, exist_ok=True)
 
-            torch.save(self.ac.state_dict(),
-                       foldername + '/ppo_actor_' + env_name + '_seed' + str(seed) + '_iter' + str(iter) + '.pth')
+            torch.save(
+                self.ac.state_dict(),
+                foldername
+                + "/ppo_actor_"
+                + env_name
+                + "_seed"
+                + str(seed)
+                + "_iter"
+                + str(iter)
+                + ".pth",
+            )
 
-            print('models is saved for iteration', iter)
+            print("models is saved for iteration", iter)
 
         except:
-            print("A result directory does not exist and cannot be created. The trial results are not saved")
+            print(
+                "A result directory does not exist and cannot be created. The trial results are not saved"
+            )
 
-    def load_model(self, iter, seed, env_name, foldername='models/ppo'):
-
-        self.ac.load_state_dict(torch.load(
-            foldername + '/ppo_actor_' + env_name + '_seed' + str(seed) + '_iter' + str(iter) + '.pth',map_location=device))
-
-
-
+    def load_model(self, iter, seed, env_name, foldername="models/ppo"):
+        self.ac.load_state_dict(
+            torch.load(
+                foldername
+                + "/ppo_actor_"
+                + env_name
+                + "_seed"
+                + str(seed)
+                + "_iter"
+                + str(iter)
+                + ".pth",
+                map_location=device,
+            )
+        )
