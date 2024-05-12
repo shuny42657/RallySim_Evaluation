@@ -4,21 +4,32 @@ This repository is used to render simulated results of trained agents in RallySi
 Currently this repo works only on Mac devices
 
 ## Requirements
-ml-agents (https://github.com/Unity-Technologies/ml-agents/tree/release_20)
-mlagents-envs (https://github.com/Unity-Technologies/ml-agents/tree/release_20)
-torch 1.8.1
+ml-agents (https://github.com/Unity-Technologies/ml-agents/tree/release_20).
+mlagents-envs (https://github.com/Unity-Technologies/ml-agents/tree/release_20).
+torch 1.8.1.
 
 ## Usage
 Assuiming the repository is cloned into a local device and all required libiraries are installed.
 
 ### Low-level
-Put a copy of the trained model to ./Badminton_Shrink-v4/models/ppo/ppo_actor_Badminton_Shrink-v4_Solid_seed[SEED]_iter[ITER]. Then go to /Badminton_Shrink-v4 and run
+Put a copy of the trained model to ./Low_level/models/ppo/ppo_actor_Low_level_seed[SEED]_iter[ITER]. Then go to ./Low_leveland run
 ```
-python3 evaluation.py --env=Badminton_Shrink-v4 --iter=ITER --seed=SEED
+python3 evaluation.py --env=Low_level --iter=ITER --seed=SEED
 ```
+If you just want to run the model which in the /models folder by default, simply run
+```
+python3 evaluation.py
+```
+By calling an argument "--test-num" you can adjust the number of episode you render (its default value is set to 10).
 
 ### High-level
-Put a copy of the trained high-level model to ./Badminton_Shrink_Multi_HRL/models/ppo/ppo_actor_Badminton_Shrink_Multi_HRL_seed[SEED]_iter[ITER].pth. Then go to ./Badminton_Shrink_Multi_HRL and run
+Put a copy of the trained high-level model to ./High_level/models/ppo/ppo_actor_High_level_seed[SEED_LOW]_iter[ITER_LOW].pth. Then go to ./High_level and run
 ```
-python3 Badminton_Shrink_Multi_HRL/evaluation.py --high_level_env=Badminton_Shrinc_Multi_HRL --iter_high=26 --seed_high=1 --low_level_env=Badminton_Shrink-v4 --seed=1 --iter=601 --train_high_level=1
+python3 evaluation.py --iter_high=ITER_HIGH --seed_high=SEED_HIGH --seed_low=SEED_LOW --iter_low=ITER_LOW
 ```
+
+Or use the default models by simply running
+```
+python3 evaluation.py
+```
+By calling an argument "--test-num" you can adjust the number of episode you render (its default value is set to 5).
