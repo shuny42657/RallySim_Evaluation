@@ -12,7 +12,7 @@ torch 1.8.1.
 Assuiming the repository is cloned into a local device and all required libiraries are installed.
 
 ### Low-level
-Put a copy of the trained model to ./Low_level/models/ppo/ppo_actor_Low_level_seed[SEED]_iter[ITER]. Then go to ./Low_leveland run
+Put a copy of the trained model to ./Low_level/models/ppo/ppo_actor_Low_level_seed[SEED]_iter[ITER].pth. Then go to ./Low_level and run
 ```
 python3 evaluation.py --env=Low_level --iter=ITER --seed=SEED
 ```
